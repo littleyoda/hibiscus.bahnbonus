@@ -78,6 +78,12 @@ public class BahnSynchronizeBackend extends AbstractSynchronizeBackend
   @Override
   public boolean supports(Class<? extends SynchronizeJob> type, Konto konto)
   {
+  	try {
+		System.out.println(konto.getBezeichnung());
+	} catch (RemoteException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
     boolean b = super.supports(type,konto);
     if (!b)
       return false;
@@ -108,7 +114,7 @@ public class BahnSynchronizeBackend extends AbstractSynchronizeBackend
   /**
    * @see de.willuhn.jameica.hbci.synchronize.AbstractSynchronizeBackend#getSynchronizeKonten(de.willuhn.jameica.hbci.rmi.Konto)
    */
-  protected List<Konto> getSynchronizeKonten(Konto k)
+  public List<Konto> getSynchronizeKonten(Konto k)
   {
     List<Konto> list = super.getSynchronizeKonten(k);
     List<Konto> result = new ArrayList<Konto>();

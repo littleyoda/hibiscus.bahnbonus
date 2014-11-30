@@ -151,6 +151,6 @@
 		<delete dir="${project.zipdir}" />
 	</target>
 
-	<target depends="zip,javadoc,src,clean" description="build a release" name="all" />
+	<target depends="zip,src,clean" description="build a release" name="all" />
 
 </project>

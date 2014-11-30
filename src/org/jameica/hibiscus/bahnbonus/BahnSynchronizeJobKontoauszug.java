@@ -1,43 +1,23 @@
 package org.jameica.hibiscus.bahnbonus;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.StringReader;
 import java.rmi.RemoteException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 import javax.annotation.Resource;
 
-import com.gargoylesoftware.htmlunit.BrowserVersion;
-import com.gargoylesoftware.htmlunit.ElementNotFoundException;
-import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
-import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.ThreadedRefreshHandler;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.DomElement;
-import com.gargoylesoftware.htmlunit.html.DomNodeList;
-import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
 import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlDivision;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlImageInput;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
-import com.gargoylesoftware.htmlunit.html.HtmlOption;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
-import com.gargoylesoftware.htmlunit.html.HtmlSelect;
-import com.gargoylesoftware.htmlunit.html.HtmlSpan;
-import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import com.gargoylesoftware.htmlunit.html.HtmlTable;
 import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
 
@@ -47,7 +27,6 @@ import de.willuhn.jameica.hbci.messaging.ImportMessage;
 import de.willuhn.jameica.hbci.messaging.SaldoMessage;
 import de.willuhn.jameica.hbci.rmi.Konto;
 import de.willuhn.jameica.hbci.rmi.Umsatz;
-import de.willuhn.jameica.hbci.synchronize.jobs.SynchronizeJob;
 import de.willuhn.jameica.hbci.synchronize.jobs.SynchronizeJobKontoauszug;
 import de.willuhn.jameica.system.Application;
 import de.willuhn.logging.Logger;
@@ -83,7 +62,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 			throw new ApplicationException(i18n.tr("Bitte geben Sie Ihren Karten-Nummer in den Synchronisationsoptionen ein"));
 
 		if (password == null || password.length() == 0)
-			password = Application.getCallback().askPassword("Miles & More");
+			password = Application.getCallback().askPassword("Password für Miles&More");
 
 		Logger.info("username: " + username);
 		////////////////
@@ -101,6 +80,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 				oldest = umsatz.getDatum();
 		}
 
+		boolean neueUmsaetze = false;
 
 		// Wir holen uns die Umsaetze seit dem letzen Abruf von der Datenbank
 		GenericIterator existing = konto.getUmsaetze(oldest,null);
@@ -109,6 +89,8 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 			if (existing.contains(umsatz) != null)
 				continue; // haben wir schon
 
+			neueUmsaetze = true;
+
 			// Neuer Umsatz. Anlegen
 			umsatz.store();
 
@@ -116,8 +98,22 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 			Application.getMessagingFactory().sendMessage(new ImportMessage(umsatz));
 		}
 
-		konto.store();
 
+		if (neueUmsaetze) {
+			// Für alle Buchungen rückwirkend den Saldo anpassen, da Lufthansa ab und zu auch mal Korrekturen mit 
+			// dem ursprünglichen Datum einfügt
+
+			double saldo = konto.getSaldo();
+			existing.begin();
+			while (existing.hasNext()) {
+				Umsatz a = (Umsatz) existing.next();
+				a.setSaldo(saldo);
+				a.store();
+				saldo -= a.getBetrag();
+			}
+		}
+		konto.store();
+		
 		// Und per Messaging Bescheid geben, dass das Konto einen neuen Saldo hat
 		Application.getMessagingFactory().sendMessage(new SaldoMessage(konto));
 	}
@@ -142,6 +138,9 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		Date now = new Date();
 		((HtmlInput) page.getElementById("auswahl.von")).setValueAttribute(now.getDate() + "." +  (now.getMonth() + 1) + "." + (now.getYear() + 1900 - 3));
 		button = (HtmlButton) page.getElementById("button.aktualisieren");
+		if (button == null) {
+			throw new ApplicationException(i18n.tr("Button zur Aktualisierung nicht gefunden!"));
+		}
 		page = button.click();
 
 
