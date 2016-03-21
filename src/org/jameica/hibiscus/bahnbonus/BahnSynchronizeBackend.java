@@ -98,7 +98,7 @@ public class BahnSynchronizeBackend extends AbstractSynchronizeBackend<BahnSynch
     }
     catch (RemoteException re)
     {
-      Logger.error("unable to check for Miles&More support",re);
+      Logger.error("unable to check for bahn.bonus support",re);
     }
     return false;
   }

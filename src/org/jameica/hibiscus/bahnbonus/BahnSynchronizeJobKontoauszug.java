@@ -62,7 +62,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 			throw new ApplicationException(i18n.tr("Bitte geben Sie Ihren Karten-Nummer in den Synchronisationsoptionen ein"));
 
 		if (password == null || password.length() == 0)
-			password = Application.getCallback().askPassword("Password für Miles&More");
+			password = Application.getCallback().askPassword("Password für bahn.bonus");
 
 		Logger.info("username: " + username);
 		////////////////
