@@ -59,7 +59,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		String username = konto.getKundennummer();
 		String password = konto.getMeta(BahnSynchronizeBackend.PROP_PASSWORD, null);
 		if (username == null || username.length() == 0)
-			throw new ApplicationException(i18n.tr("Bitte geben Sie Ihren Karten-Nummer in den Synchronisationsoptionen ein"));
+			throw new ApplicationException(i18n.tr("Bitte geben Sie Ihren Benutzernamen im Feld Kundenkennung ein."));
 
 		if (password == null || password.length() == 0)
 			password = Application.getCallback().askPassword("Password für bahn.bonus");
