@@ -163,7 +163,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 
 		extractPunkteStand(page, konto);
 		
-		webClient.closeAllWindows();
+		webClient.close();
 		return umsaetze;
 	}
 
