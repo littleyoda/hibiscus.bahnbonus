@@ -16,6 +16,7 @@ import com.gargoylesoftware.htmlunit.ThreadedRefreshHandler;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlButton;
 import com.gargoylesoftware.htmlunit.html.HtmlDivision;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTable;
@@ -122,7 +123,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		List<Umsatz> umsaetze = new ArrayList<Umsatz>();
 
 		final WebClient webClient = new WebClient();
-		Utils.setProxyCfg(webClient, "\"https://fahrkarten.bahn.de/");
+		Utils.setProxyCfg(webClient, "https://fahrkarten.bahn.de/");
 		webClient.setCssErrorHandler(new SilentCssErrorHandler());
 		webClient.setRefreshHandler(new ThreadedRefreshHandler());
 
@@ -176,16 +177,47 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		if (punkte.size() != 1) {
 			throw new ApplicationException("Punkteübersicht nicht gefunden! Size: " + punkte.size());
 		}
-		// No better way :-(
-		HtmlDivision div = (HtmlDivision) punkte.get(0).getChildNodes().get(0).getChildNodes().get(1).getChildNodes().get(1);
-		try {
-			konto.setSaldo(string2float(div.asText().trim()));
-		} catch (RemoteException e) {
-			throw new ApplicationException("Punkte den Punktestand nicht ermitteln: " + div.asText().trim());
+		String out = "";
+		
+		out = punkteVariante1(konto, punkte);
+		Logger.info("Variante1: " + out);
+		if (out == null) {
+			out = punkteVariante2(konto, page);
+			Logger.info("Variante2: " + out);
 		}
-
+		try {
+			konto.setSaldo(string2float(out));
+		} catch (RemoteException e) {
+			throw new ApplicationException(e);
+		}
 	}
 
+	private String punkteVariante1(Konto konto, List<HtmlDivision> punkte) throws ApplicationException {
+		// No better way :-(
+		HtmlDivision div;
+		try {
+			div = (HtmlDivision) punkte.get(0).getChildNodes().get(0).getChildNodes().get(1).getChildNodes().get(1);
+		} catch (NullPointerException e) {
+			return null;
+		}
+		return div.asText().trim();
+	}
+
+	private String punkteVariante2(Konto konto, HtmlPage page) throws ApplicationException {
+		// No better way :-(
+		
+		HtmlDivision div;
+		try {
+			List<HtmlElement> divs = (List<HtmlElement>) page.getByXPath(".//div[./div/label[contains(text(), 'Ihr aktueller Prämienpunktestand')]]/div[2]");
+			if (divs.size() == 0) {
+				throw new ApplicationException("Punktestand nicht gefunden!");
+			}
+			div = (HtmlDivision) divs.get(0);
+		} catch (NullPointerException e) {
+			return null;
+		}
+		return div.asText().trim();
+	}
 
 
 
