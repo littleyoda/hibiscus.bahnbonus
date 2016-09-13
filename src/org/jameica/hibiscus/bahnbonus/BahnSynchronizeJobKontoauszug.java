@@ -122,6 +122,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		List<Umsatz> umsaetze = new ArrayList<Umsatz>();
 
 		final WebClient webClient = new WebClient();
+		Utils.setProxyCfg(webClient, "\"https://fahrkarten.bahn.de/");
 		webClient.setCssErrorHandler(new SilentCssErrorHandler());
 		webClient.setRefreshHandler(new ThreadedRefreshHandler());
 
@@ -133,6 +134,9 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 
 		page = button.click();
 		webClient.waitForBackgroundJavaScript(3000);
+		if (page.asText().contains("Ihr Zugang zu unserem Buchungssystem vorübergehend gesperrt")) {
+			throw new ApplicationException("Der Zugang ist gesperrt. Bitte E-Mail von bahn.de bachten!");
+		}
 		page = ((HtmlInput) page.getElementById("mbahnbonuspunkte.button.bahnbonus")).click();
 
 		Date now = new Date();
