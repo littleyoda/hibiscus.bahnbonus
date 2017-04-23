@@ -149,7 +149,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		page = button.click();
 
 
-		List<HtmlTable> tables = (List<HtmlTable>) page.getByXPath( "//table[contains(@class, 'bcpunktedetails')]");
+		List<HtmlTable> tables = (List<HtmlTable>) (List<?>) page.getByXPath( "//table[contains(@class, 'bcpunktedetails')]");
 		if (tables.size() != 1) {
 			throw new ApplicationException("Table nicht gefunden! Size: " + tables.size());
 		}
@@ -173,7 +173,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 	}
 
 	private void extractPunkteStand(HtmlPage page, Konto konto) throws ApplicationException {
-		List<HtmlDivision> punkte = (List<HtmlDivision>) page.getByXPath( "//div[contains(@class, 'bcpunkteinfo')]");
+		List<HtmlDivision> punkte = (List<HtmlDivision>) (List<?>) page.getByXPath( "//div[contains(@class, 'bcpunkteinfo')]");
 		if (punkte.size() != 1) {
 			throw new ApplicationException("Punkteübersicht nicht gefunden! Size: " + punkte.size());
 		}
@@ -208,7 +208,7 @@ public class BahnSynchronizeJobKontoauszug extends SynchronizeJobKontoauszug imp
 		
 		HtmlDivision div;
 		try {
-			List<HtmlElement> divs = (List<HtmlElement>) page.getByXPath(".//div[./div/label[contains(text(), 'Ihr aktueller Prämienpunktestand')]]/div[2]");
+			List<HtmlElement> divs = (List<HtmlElement>) (List<?>) page.getByXPath(".//div[./div/label[contains(text(), 'Ihr aktueller Prämienpunktestand')]]/div[2]");
 			if (divs.size() == 0) {
 				throw new ApplicationException("Punktestand nicht gefunden!");
 			}
